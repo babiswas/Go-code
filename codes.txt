@@ -1,0 +1,96 @@
+func showUser(w http.ResponseWriter,r *http.Request){
+   db,err:=initdb()
+   if err!=nil{
+       log.Println("Database error occured")
+   }
+   defer db.Close()
+
+   str3:=[]string{"user1","user2",}
+   att:=Attribute{"C++","12"}
+   role:=Roles{str3,att}
+   u2:=User{"Sapan","sapan@gmail.com","6360115781","America",role}
+   body,_:=json.Marshal(u2)
+   fmt.Println(body)
+   w.Header().Set("Content-Type","application/json")
+   w.Header().Add("Access-Control-Allow-Origin","*")
+   w.Header().Add("Access-Control-Allow-Origin","POST,GET,OPTIONS,PUT,DELETE")
+   w.Header().Add("Access-Control-Allow-Origin","Accept,Content-Type,Content-Length,Authorization,X-CSRF-Token,Accept-Encoding")
+   w.Write([]byte(body))
+}
+
+
+func showUsers(w http.ResponseWriter,r *http.Request){
+   str3:=[]string{"user1","user2",}
+   att:=Attribute{"C++","12"}
+   role:=Roles{str3,att}
+   u3:=[]User{{"Ravan","Ravan@re.com","8812868277","Lalganesh",role},{"Madan","Madan@md.com","8812868277","Mumbai",role},{"Tushar","tushar@tu.com","986545","Delhi",role}}
+   body,_:=json.Marshal(u3)
+   w.Header().Set("Content-Type","application/json")
+   w.Header().Add("Access-Control-Allow-Origin","*")
+   w.Header().Add("Access-Control-Allow-Origin","POST,GET,OPTIONS,PUT,DELETE")
+   w.Header().Add("Access-Control-Allow-Origin","Accept,Content-Type,Content-Length,Authorization,X-CSRF-Token,Accept-Encoding")
+   w.Write([]byte(body))
+}
+
+func NewProduct(w http.ResponseWriter,r *http.Request){
+   switch r.Method{
+   case http.MethodPost:
+       var newproduct  Product
+       body,err:=ioutil.ReadAll(r.Body)
+       if err!=nil{
+         w.WriteHeader(http.StatusBadRequest)
+       }
+       err=json.Unmarshal(body,&newproduct)
+       if err!=nil{
+         w.WriteHeader(http.StatusBadRequest)
+       }
+       fmt.Println(newproduct)
+       body,err=json.Marshal(newproduct)
+       if err!=nil{
+          fmt.Println(err)
+       }
+       w.Header().Set("Content-Type","application/json")
+       w.Header().Add("Access-Control-Allow-Origin","*")
+       w.Header().Add("Access-Control-Allow-Origin","POST,GET,OPTIONS,PUT,DELETE")
+       w.Header().Add("Access-Control-Allow-Origin","Accept,Content-Type,Content-Length,Authorization,X-CSRF-Token,Accept-Encoding")
+       w.Write([]byte(body))
+   default:
+      w.WriteHeader(http.StatusMethodNotAllowed)
+
+   }
+ }
+
+
+ func middleware(handler http.Handler)http.Handler{
+    return http.HandlerFunc(
+       func (w http.ResponseWriter, r *http.Request){
+          username,password,ok:=r.BasicAuth()
+          fmt.Println(username)
+          fmt.Println(password)
+          fmt.Println(ok)
+          if !ok || !checkup(username,password){
+             w.Header().Set("WWW-Authenticate",`Basic realm="Account Invalid"`)
+             w.WriteHeader(401)
+             w.Write([]byte("Unauthorized"))
+             return
+          }
+          handler.ServeHTTP(w,r)
+          fmt.Println("middleware finished")
+       })
+ }
+
+
+ func checkup(username,password string)bool{
+    return username == "admin" && password == "123"
+ }
+
+
+
+
+func  initdb()(db *DB,err error){
+   db,err:=gorm.Open("postgres","user=test password=Learner#12 dbname=employee sslmode=disable")
+	if err!=nil{
+		fmt.Println("Error occured")
+	}
+   return db,err
+}
